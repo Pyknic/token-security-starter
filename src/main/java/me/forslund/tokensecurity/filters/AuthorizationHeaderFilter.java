@@ -42,7 +42,7 @@ public class AuthorizationHeaderFilter extends OncePerRequestFilter {
 
     private @Value("${jwt.issuer:localhost}") String expectedIssuer;
     private @Value("${jwt.audience:localhost}") String expectedAudience;
-    private @Value("${jwt.scope}") String expectedScope;
+    private @Value("${jwt.scope:}") String expectedScope;
 
     public AuthorizationHeaderFilter(UserDetailsService userDetailsService, TokenSecurityKeyProvider tokenSecurityKeyProvider) {
         this.userDetailsService       = requireNonNull(userDetailsService);

@@ -1,9 +1,9 @@
 package me.forslund.tokensecurity.internal;
 
+import me.forslund.tokensecurity.JwtProperties;
 import me.forslund.tokensecurity.TokenSecurityKeyProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.env.Environment;
 import org.springframework.util.StringUtils;
 
 import java.io.BufferedReader;
@@ -15,6 +15,8 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
@@ -34,20 +36,72 @@ public final class TokenSecurityKeyProviderImpl implements TokenSecurityKeyProvi
 
     private final static Logger LOGGER = LoggerFactory.getLogger(TokenSecurityKeyProviderImpl.class);
     private final static Pattern REMOVE_PATTERN = Pattern.compile("^-+(?:BEGIN|END)\\s(?:PUBLIC|PRIVATE)\\sKEY-+$");
-    private final Environment environment;
+    private final JwtProperties props;
     private final AtomicReference<RSAPublicKey> publicKey;
     private final AtomicReference<RSAPrivateKey> privateKey;
 
-    public TokenSecurityKeyProviderImpl(Environment environment) {
-        this.environment = requireNonNull(environment);
+    public TokenSecurityKeyProviderImpl(JwtProperties props) {
+        this.props = requireNonNull(props);
         this.publicKey   = new AtomicReference<>(null);
         this.privateKey  = new AtomicReference<>(null);
     }
 
     @Override
+    public void saveKeyPairToDisk() {
+        var publicKeyString = props.getPublicKey();
+        var privateKeyString = props.getPrivateKey();
+
+        if (!StringUtils.hasText(publicKeyString) ||
+            !StringUtils.hasText(privateKeyString)) {
+
+            throw new RuntimeException("Missing jwt.publicKey or jwt.privateKey property (required if jwt.bootstrap = true)");
+        }
+
+        var publicKeyPath = Path.of(publicKeyString);
+        var privateKeyPath = Path.of(privateKeyString);
+
+        final KeyPair keyPair;
+        try {
+            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+            keyGen.initialize(2048); // or 4096
+            keyPair = keyGen.generateKeyPair();
+        } catch (final NoSuchAlgorithmException ex) {
+            throw new RuntimeException("Failed to generate RSA key pair", ex);
+        }
+
+        // Serialize to JSON
+        String privateKeyPEM = encodeToPEM("PRIVATE KEY", keyPair.getPrivate().getEncoded());
+        String publicKeyPEM = encodeToPEM("PUBLIC KEY", keyPair.getPublic().getEncoded());
+        
+        if (!Files.exists(publicKeyPath)) {
+            if (!Files.isWritable(publicKeyPath)) {
+                throw new RuntimeException("Public JWT RSA key '%s' does not exist and can't be written to".formatted(publicKeyPath));
+            }
+
+            try {
+                Files.writeString(publicKeyPath, publicKeyPEM);
+            } catch (final IOException ex) {
+                throw new RuntimeException("Could not write public JWT RSA key to %s".formatted(publicKeyPath), ex);
+            }
+        }
+
+        if (!Files.exists(privateKeyPath)) {
+            if (!Files.isWritable(privateKeyPath)) {
+                throw new RuntimeException("Private JWT RSA key '%s' does not exist and can't be written to".formatted(privateKeyPath));
+            }
+
+            try {
+                Files.writeString(privateKeyPath, privateKeyPEM);
+            } catch (final IOException ex) {
+                throw new RuntimeException("Could not write private JWT RSA key to %s".formatted(privateKeyPath), ex);
+            }
+        }
+    }
+
+    @Override
     public Optional<RSAPublicKey> getPublicKey() {
         return lazyLoad(publicKey, () -> {
-            var publicKeyString = environment.getProperty("jwt.publicKey");
+            var publicKeyString = props.getPublicKey();
             return loadKeySpec(publicKeyString)
                 .map(keySpec -> {
                     try {
@@ -65,7 +119,7 @@ public final class TokenSecurityKeyProviderImpl implements TokenSecurityKeyProvi
     @Override
     public Optional<RSAPrivateKey> getPrivateKey() {
         return lazyLoad(privateKey, () -> {
-            var privateKeyString = environment.getProperty("jwt.privateKey");
+            var privateKeyString = props.getPrivateKey();
             return loadKeySpec(privateKeyString)
                 .map(keySpec -> {
                     try {
@@ -171,5 +225,12 @@ public final class TokenSecurityKeyProviderImpl implements TokenSecurityKeyProvi
         } catch (final MalformedURLException ex) {
             return null;
         }
+    }
+
+    private static String encodeToPEM(String title, byte[] keyBytes) {
+        String encoded = Base64.getMimeEncoder(64, new byte[]{'\n'}).encodeToString(keyBytes);
+        return "-----BEGIN " + title + "-----\n" +
+            encoded +
+            "\n-----END " + title + "-----\n";
     }
 }

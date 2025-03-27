@@ -67,6 +67,12 @@
             <artifactId>nimbus-jose-jwt</artifactId>
             <version>10.0.2</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional> <!-- very important for starters -->
+        </dependency>
     </dependencies>
 
     <dependencyManagement>

@@ -10,4 +10,5 @@ import java.util.Optional;
 public interface TokenSecurityKeyProvider {
     Optional<RSAPublicKey> getPublicKey();
     Optional<RSAPrivateKey> getPrivateKey();
+    void saveKeyPairToDisk();
 }

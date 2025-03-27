@@ -1,0 +1,2 @@
+# Spring Boot 3.x preferred format (AutoConfiguration.imports)
+me.forslund.tokensecurity.TokenSecurityAutoConfiguration

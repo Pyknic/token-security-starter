@@ -25,8 +25,6 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.joining;
-
 /**
  * Security filter that checks for POST requests to the /login/refresh endpoint. If the request matches, then it will
  * check if a valid refresh token exists in a secure cookie called 'jwt.token'. If it exists, then a new access token
@@ -102,7 +100,8 @@ public class RefreshTokenFilter extends OncePerRequestFilter {
     }
 
     private Optional<String> extractRefreshTokenFromCookie(HttpServletRequest request) {
-        return Stream.of(request.getCookies())
+        return Optional.ofNullable(request.getCookies()).stream()
+            .flatMap(Stream::of)
             .filter(cookie -> cookie.getName().equals(cookieName))
             .map(Cookie::getValue)
             .findAny();

@@ -13,6 +13,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @Import({
@@ -29,5 +32,12 @@ public class TokenSecurityAutoConfiguration {
     @Bean
     public TokenSecurityKeyProvider tokenSecurityKeyProvider(JwtProperties props) {
         return new TokenSecurityKeyProviderImpl(props);
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "jwt.enabled", havingValue = "true", matchIfMissing = true)
+    public SecurityFilterChain authorizationFilterChain(HttpSecurity http, AuthorizationHeaderFilter filter) throws Exception {
+        http.addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
+        return http.build();
     }
 }

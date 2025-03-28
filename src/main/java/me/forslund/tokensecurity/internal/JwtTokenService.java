@@ -74,7 +74,7 @@ public class JwtTokenService {
         var claims = claimsBuilder.build();
 
         SignedJWT signedJWT = new SignedJWT(
-            new JWSHeader(JWSAlgorithm.RS256), // RS256 is one of the algorithms for RSA
+            new JWSHeader(JWSAlgorithm.RS256),
             claims
         );
 

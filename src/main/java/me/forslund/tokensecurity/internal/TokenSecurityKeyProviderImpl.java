@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -21,9 +22,12 @@ import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.Optional;
+import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -74,10 +78,6 @@ public final class TokenSecurityKeyProviderImpl implements TokenSecurityKeyProvi
         String publicKeyPEM = encodeToPEM("PUBLIC KEY", keyPair.getPublic().getEncoded());
         
         if (!Files.exists(publicKeyPath)) {
-            if (!Files.isWritable(publicKeyPath)) {
-                throw new RuntimeException("Public JWT RSA key '%s' does not exist and can't be written to".formatted(publicKeyPath));
-            }
-
             try {
                 Files.writeString(publicKeyPath, publicKeyPEM);
             } catch (final IOException ex) {
@@ -86,10 +86,6 @@ public final class TokenSecurityKeyProviderImpl implements TokenSecurityKeyProvi
         }
 
         if (!Files.exists(privateKeyPath)) {
-            if (!Files.isWritable(privateKeyPath)) {
-                throw new RuntimeException("Private JWT RSA key '%s' does not exist and can't be written to".formatted(privateKeyPath));
-            }
-
             try {
                 Files.writeString(privateKeyPath, privateKeyPEM);
             } catch (final IOException ex) {
@@ -102,7 +98,7 @@ public final class TokenSecurityKeyProviderImpl implements TokenSecurityKeyProvi
     public Optional<RSAPublicKey> getPublicKey() {
         return lazyLoad(publicKey, () -> {
             var publicKeyString = props.getPublicKey();
-            return loadKeySpec(publicKeyString)
+            return loadKeySpec(publicKeyString, true)
                 .map(keySpec -> {
                     try {
                         java.security.KeyFactory keyFactory = java.security.KeyFactory.getInstance("RSA");
@@ -120,7 +116,7 @@ public final class TokenSecurityKeyProviderImpl implements TokenSecurityKeyProvi
     public Optional<RSAPrivateKey> getPrivateKey() {
         return lazyLoad(privateKey, () -> {
             var privateKeyString = props.getPrivateKey();
-            return loadKeySpec(privateKeyString)
+            return loadKeySpec(privateKeyString, false)
                 .map(keySpec -> {
                     try {
                         java.security.KeyFactory keyFactory = java.security.KeyFactory.getInstance("RSA");
@@ -149,7 +145,7 @@ public final class TokenSecurityKeyProviderImpl implements TokenSecurityKeyProvi
         return Optional.of(value);
     }
 
-    private Optional<X509EncodedKeySpec> loadKeySpec(String keyString) {
+    private Optional<KeySpec> loadKeySpec(String keyString, boolean isPublicKey) {
         // Don't try to parse it as a path or URL if it is empty.
         if (!StringUtils.hasText(keyString)) return Optional.empty();
 
@@ -165,7 +161,9 @@ public final class TokenSecurityKeyProviderImpl implements TokenSecurityKeyProvi
                 .filter(StringUtils::hasText)
             )
             .map(str -> Base64.getDecoder().decode(str))
-            .map(X509EncodedKeySpec::new);
+            .map(data -> isPublicKey
+                ? new X509EncodedKeySpec(data)
+                : new PKCS8EncodedKeySpec(data));
     }
 
     private Optional<Path> tryGetPath(final String string) {
@@ -228,9 +226,17 @@ public final class TokenSecurityKeyProviderImpl implements TokenSecurityKeyProvi
     }
 
     private static String encodeToPEM(String title, byte[] keyBytes) {
-        String encoded = Base64.getMimeEncoder(64, new byte[]{'\n'}).encodeToString(keyBytes);
-        return "-----BEGIN " + title + "-----\n" +
-            encoded +
-            "\n-----END " + title + "-----\n";
+        String delimiter = "\r\n";
+        String encoded = Base64
+            .getMimeEncoder(64, delimiter.getBytes(StandardCharsets.US_ASCII))
+            .encodeToString(keyBytes);
+
+        var dashes = "-".repeat(5);
+        var joiner = new StringJoiner(delimiter);
+        joiner.add(dashes + "BEGIN " + title + dashes);
+        joiner.add(encoded);
+        joiner.add(dashes + "END " + title + dashes);
+        joiner.add("");
+        return joiner.toString();
     }
 }

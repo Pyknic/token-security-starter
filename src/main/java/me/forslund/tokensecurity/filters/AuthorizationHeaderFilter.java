@@ -15,6 +15,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.ott.OneTimeTokenAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -77,8 +78,13 @@ public class AuthorizationHeaderFilter extends OncePerRequestFilter {
                     throw new JwtException(JwtException.Reason.USER_NOT_FOUND, ex);
                 }
 
-                Authentication authentication = new OneTimeTokenAuthenticationToken(userDetails, authHeader);
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                LOGGER.debug("Setting OneTimeTokenAuthenticationToken in SecurityContextHolder");
+                Authentication authentication = OneTimeTokenAuthenticationToken
+                    .authenticated(userDetails, userDetails.getAuthorities());
+
+                SecurityContext context = SecurityContextHolder.createEmptyContext();
+                context.setAuthentication(authentication);
+                SecurityContextHolder.setContext(context);
 
             } catch (final JwtException ex) {
                 reject(response, ex.getMessage());

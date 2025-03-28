@@ -35,8 +35,8 @@ public class TokenSecurityProperties {
 
     public TokenSecurityProperties(
         @DefaultValue("true") boolean bootstrap,
-        @DefaultValue("") String publicKey,
-        @DefaultValue("") String privateKey) {
+        @DefaultValue("jwt_public.pem") String publicKey,
+        @DefaultValue("jwt_private.pem") String privateKey) {
 
         this.bootstrap = bootstrap;
         this.publicKey = publicKey;

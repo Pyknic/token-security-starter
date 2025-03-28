@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 @ConfigurationProperties(prefix = "jwt")
-public class JwtProperties {
+public class TokenSecurityProperties {
 
     /**
      * If true, the JWT RSA key pair will be created the first time the application starts.
@@ -33,7 +33,7 @@ public class JwtProperties {
      */
     private final String privateKey;
 
-    public JwtProperties(
+    public TokenSecurityProperties(
         @DefaultValue("true") boolean bootstrap,
         @DefaultValue("") String publicKey,
         @DefaultValue("") String privateKey) {

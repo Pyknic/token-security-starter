@@ -1,6 +1,6 @@
 package me.forslund.tokensecurity.internal;
 
-import me.forslund.tokensecurity.JwtProperties;
+import me.forslund.tokensecurity.TokenSecurityProperties;
 import me.forslund.tokensecurity.TokenSecurityKeyProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,11 +40,11 @@ public final class TokenSecurityKeyProviderImpl implements TokenSecurityKeyProvi
 
     private final static Logger LOGGER = LoggerFactory.getLogger(TokenSecurityKeyProviderImpl.class);
     private final static Pattern REMOVE_PATTERN = Pattern.compile("^-+(?:BEGIN|END)\\s(?:PUBLIC|PRIVATE)\\sKEY-+$");
-    private final JwtProperties props;
+    private final TokenSecurityProperties props;
     private final AtomicReference<RSAPublicKey> publicKey;
     private final AtomicReference<RSAPrivateKey> privateKey;
 
-    public TokenSecurityKeyProviderImpl(JwtProperties props) {
+    public TokenSecurityKeyProviderImpl(TokenSecurityProperties props) {
         this.props = requireNonNull(props);
         this.publicKey   = new AtomicReference<>(null);
         this.privateKey  = new AtomicReference<>(null);

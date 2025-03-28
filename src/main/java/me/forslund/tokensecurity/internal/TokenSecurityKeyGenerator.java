@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import static java.util.Objects.requireNonNull;
 
 @Component
-@ConditionalOnProperty(name = "jwt.bootstrap", havingValue = "true")
+@ConditionalOnProperty(name = "TokenSecurityProperties", havingValue = "true")
 public class TokenSecurityKeyGenerator implements ApplicationRunner {
 
     private final TokenSecurityKeyProvider tokenSecurityKeyProvider;

@@ -12,7 +12,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.core.env.Environment;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -26,11 +25,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
     LoginFilter.class,
     TokenSecurityKeyGenerator.class
 })
-@EnableConfigurationProperties(JwtProperties.class)
+@EnableConfigurationProperties(TokenSecurityProperties.class)
 public class TokenSecurityAutoConfiguration {
 
     @Bean
-    public TokenSecurityKeyProvider tokenSecurityKeyProvider(JwtProperties props) {
+    public TokenSecurityKeyProvider tokenSecurityKeyProvider(TokenSecurityProperties props) {
         return new TokenSecurityKeyProviderImpl(props);
     }
 

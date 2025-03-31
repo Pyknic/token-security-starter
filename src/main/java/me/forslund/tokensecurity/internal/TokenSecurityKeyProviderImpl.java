@@ -2,6 +2,7 @@ package me.forslund.tokensecurity.internal;
 
 import me.forslund.tokensecurity.TokenSecurityProperties;
 import me.forslund.tokensecurity.TokenSecurityKeyProvider;
+import me.forslund.tokensecurity.throwable.JwtException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
@@ -160,7 +161,13 @@ public final class TokenSecurityKeyProviderImpl implements TokenSecurityKeyProvi
             .or(() -> Optional.of(processLines(keyString.lines()))
                 .filter(StringUtils::hasText)
             )
-            .map(str -> Base64.getDecoder().decode(str))
+            .map(str -> {
+                try {
+                    return Base64.getDecoder().decode(str);
+                } catch (final IllegalArgumentException ex) {
+                    throw new RuntimeException("Failed to decode base64-string: " + str, ex);
+                }
+            })
             .map(data -> isPublicKey
                 ? new X509EncodedKeySpec(data)
                 : new PKCS8EncodedKeySpec(data));

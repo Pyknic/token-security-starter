@@ -30,10 +30,4 @@ public class TokenSecurityAutoConfiguration {
     public TokenSecurityKeyProvider tokenSecurityKeyProvider(TokenSecurityProperties props) {
         return new TokenSecurityKeyProviderImpl(props);
     }
-
-    @Bean
-    @ConditionalOnProperty(name = "jwt.enabled", havingValue = "true", matchIfMissing = true)
-    public TokenSecurityConfigurer authorizationFilterChain(AuthorizationHeaderFilter filter) throws Exception {
-        return new TokenSecurityConfigurer(filter);
-    }
 }

@@ -15,8 +15,8 @@ import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.ott.OneTimeTokenAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.context.SecurityContextHolderStrategy;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -33,21 +33,24 @@ import static java.util.Objects.requireNonNull;
  * valid. If it was invalid, then the filter chain stops with a 401 error. If the header is missing, then this filter
  * is ignored (leaving the security context empty).
  */
-@Component
-@Order(SecurityProperties.DEFAULT_FILTER_ORDER - 1)
 public class AuthorizationHeaderFilter extends OncePerRequestFilter {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(AuthorizationHeaderFilter.class);
     private final UserDetailsService userDetailsService;
     private final TokenSecurityKeyProvider tokenSecurityKeyProvider;
+    private final SecurityContextHolderStrategy securityContextHolderStrategy;
 
     private @Value("${jwt.issuer:localhost}") String expectedIssuer;
     private @Value("${jwt.audience:localhost}") String expectedAudience;
     private @Value("${jwt.scope:}") String expectedScope;
 
-    public AuthorizationHeaderFilter(UserDetailsService userDetailsService, TokenSecurityKeyProvider tokenSecurityKeyProvider) {
-        this.userDetailsService       = requireNonNull(userDetailsService);
-        this.tokenSecurityKeyProvider = requireNonNull(tokenSecurityKeyProvider);
+    public AuthorizationHeaderFilter(
+            UserDetailsService userDetailsService,
+            TokenSecurityKeyProvider tokenSecurityKeyProvider) {
+
+        this.userDetailsService            = requireNonNull(userDetailsService);
+        this.tokenSecurityKeyProvider      = requireNonNull(tokenSecurityKeyProvider);
+        this.securityContextHolderStrategy = SecurityContextHolder.getContextHolderStrategy();
     }
 
     @Override
@@ -82,9 +85,9 @@ public class AuthorizationHeaderFilter extends OncePerRequestFilter {
                 Authentication authentication = OneTimeTokenAuthenticationToken
                     .authenticated(userDetails, userDetails.getAuthorities());
 
-                SecurityContext context = SecurityContextHolder.createEmptyContext();
+                var context = securityContextHolderStrategy.createEmptyContext();
                 context.setAuthentication(authentication);
-                SecurityContextHolder.setContext(context);
+                securityContextHolderStrategy.setContext(context);
 
             } catch (final JwtException ex) {
                 reject(response, ex.getMessage());

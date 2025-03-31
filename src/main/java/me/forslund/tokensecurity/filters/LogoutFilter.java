@@ -33,7 +33,7 @@ public class LogoutFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
 
-        if ("POST".equals(request.getMethod()) && logoutUrl.equals(request.getRequestURI())) {
+        if ("POST".equals(request.getMethod()) && logoutUrl.equals(request.getServletPath())) {
             LOGGER.trace("Request POST {} matched.", logoutUrl);
 
             // Clear cookie

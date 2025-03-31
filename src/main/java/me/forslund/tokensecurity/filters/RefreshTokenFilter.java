@@ -58,7 +58,7 @@ public class RefreshTokenFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
 
-        if ("POST".equals(request.getMethod()) && refreshUrl.equals(request.getRequestURI())) {
+        if ("POST".equals(request.getMethod()) && refreshUrl.equals(request.getServletPath())) {
             LOGGER.trace("Request POST {} matched.", refreshUrl);
             var cookieValue = extractRefreshTokenFromCookie(request);
             if (cookieValue.isEmpty()) {

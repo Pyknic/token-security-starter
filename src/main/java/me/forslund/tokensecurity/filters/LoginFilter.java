@@ -47,6 +47,7 @@ public class LoginFilter extends OncePerRequestFilter {
     private @Value("${jwt.cookie.name:jwt.token}") String cookieName;
     private @Value("${jwt.cookie.domain:localhost}") String cookieDomain;
     private @Value("${jwt.cookie.secure:false}") boolean secureCookie;
+    private @Value("${server.servlet.context-path:/}") boolean pathPrefix;
 
     public LoginFilter(UserDetailsService userDetailsService,
                        @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection") PasswordEncoder passwordEncoder,
@@ -64,7 +65,7 @@ public class LoginFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
 
-        if ("POST".equals(request.getMethod()) && loginUrl.equals(request.getRequestURI())) {
+        if ("POST".equals(request.getMethod()) && loginUrl.equals(request.getServletPath())) {
             LOGGER.trace("Request POST {} matched.", loginUrl);
 
             if (request.getContentType() == null || !request.getContentType().equals(MediaType.APPLICATION_JSON_VALUE)) {

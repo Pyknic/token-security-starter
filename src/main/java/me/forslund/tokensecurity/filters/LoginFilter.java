@@ -47,7 +47,6 @@ public class LoginFilter extends OncePerRequestFilter {
     private @Value("${jwt.cookie.name:jwt.token}") String cookieName;
     private @Value("${jwt.cookie.domain:localhost}") String cookieDomain;
     private @Value("${jwt.cookie.secure:false}") boolean secureCookie;
-    private @Value("${server.servlet.context-path:/}") boolean pathPrefix;
 
     public LoginFilter(UserDetailsService userDetailsService,
                        @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection") PasswordEncoder passwordEncoder,

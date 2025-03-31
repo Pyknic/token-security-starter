@@ -19,9 +19,34 @@ Add the dependency:
 </dependency>
 ```
 
-Make sure your application have implementations of the following beans:
-- `PasswordEncoder`
-- `UserDetailsService`
+Add to your security filter chain:
+
+```java
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    @Bean
+    public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
+        http.authorizeHttpRequests((authorize) -> authorize
+                .requestMatchers("/public/**").permitAll()
+                .anyRequest().authenticated()
+            )
+            // ...
+            .apply(tokenSecurityConfigurer()); // <-- Add this line
+
+        return http.build();
+    }
+
+    @Bean
+    public TokenSecurityConfigurer tokenSecurityConfigurer() {
+        return new TokenSecurityConfigurer();
+    }
+    
+    // PasswordEncoder
+    // UserDetailsService
+}
+```
 
 ## Usage
 Three new endpoints are added as security filters:

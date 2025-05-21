@@ -33,7 +33,7 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             // ...
-            .apply(tokenSecurityConfigurer()); // <-- Add this line
+            .with(tokenSecurityConfigurer(), Customizer.withDefaults()); // <-- Add this line
 
         return http.build();
     }
